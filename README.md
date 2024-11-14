@@ -100,7 +100,7 @@ The project includes security rules for both Firestore and Storage. Review and m
 
 ## Project Features
 
-- Next.js 13+ with App Router
+- Next.js with App Router
 - Firebase Integration
   - Firestore Database
   - Cloud Storage

@@ -1,0 +1,27 @@
+{
+  "name": "Firebase Next.js Development",
+  "dockerFile": "Dockerfile",
+  "forwardPorts": [3000, 5000, 9099, 9199],
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true
+    }
+  },
+  "extensions": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "ms-azuretools.vscode-docker",
+    "firebase.vscode-firebase",
+    "github.copilot",
+    "ms-vscode.vscode-typescript-next"
+  ],
+  "postCreateCommand": "npm install -g firebase-tools && cd web-app && npm install && cd ../functions && npm install",
+  "remoteUser": "node",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
+}
