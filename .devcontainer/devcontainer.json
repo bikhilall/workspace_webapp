@@ -18,7 +18,7 @@
     "github.copilot",
     "ms-vscode.vscode-typescript-next"
   ],
-  "postCreateCommand": "cd web-app && npm install && npm run dev & cd ../functions && npm install",
+  "postCreateCommand": "cd web-app && npm install && npm run dev",
   "remoteUser": "node",
   "features": {
     "ghcr.io/devcontainers/features/git:1": {},
