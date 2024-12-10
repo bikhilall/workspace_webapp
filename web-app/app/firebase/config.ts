@@ -5,12 +5,7 @@ import { getFunctions } from 'firebase/functions';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCrIfo14AGOXtia0z2wjOamHPnjFCBkJ_4",
-  authDomain: "local-5e9a4.firebaseapp.com",
-  projectId: "local-5e9a4",
-  storageBucket: "local-5e9a4.firebasestorage.app",
-  messagingSenderId: "964689983524",
-  appId: "1:964689983524:web:1366ff1b790decdc8d00b1"
+
 };
 
 // Initialize Firebase
