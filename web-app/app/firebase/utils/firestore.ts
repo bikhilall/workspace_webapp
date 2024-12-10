@@ -10,6 +10,7 @@ import {
   where,
   orderBy,
   DocumentData,
+  arrayContains,
 } from 'firebase/firestore';
 import { db } from '../config';
 
@@ -78,6 +79,25 @@ export const firestoreUtils = {
       collection(db, collectionName),
       orderBy(orderByField, orderDirection)
     );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  },
+
+  // Search posts by keyword
+  searchPostsByKeyword: async (keyword: string) => {
+    if (!keyword.trim()) {
+      return await firestoreUtils.getAllDocuments('posts');
+    }
+
+    const q = query(
+      collection(db, 'posts'),
+      where('keywords', 'array-contains', keyword.toLowerCase().trim()),
+      orderBy('createdAt', 'desc')
+    );
+    
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,

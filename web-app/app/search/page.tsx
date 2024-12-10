@@ -1,27 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { firestoreUtils } from '@/app/firebase/utils/firestore';
-import { storageUtils } from '@/app/firebase/utils/storage';
-import { auth } from '@/app/firebase/config';
 import {
-  Paper,
+  Container,
   Typography,
   Box,
+  TextField,
+  Paper,
   IconButton,
-  Divider,
   CardMedia,
   Chip,
   Stack,
-  TextField,
-  InputAdornment,
   CircularProgress,
+  InputAdornment,
+  Alert,
 } from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import DeleteIcon from '@mui/icons-material/Delete';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import { auth } from '@/app/firebase/config';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Post {
   id: string;
@@ -34,70 +34,51 @@ interface Post {
   keywords?: string[];
 }
 
-export default function PostList() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [error, setError] = useState('');
+export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const fetchPosts = async (keyword?: string) => {
+  useEffect(() => {
+    const keyword = searchParams.get('keyword');
+    if (keyword) {
+      setSearchTerm(keyword);
+      performSearch(keyword);
+    }
+  }, [searchParams]);
+
+  const performSearch = async (term: string) => {
+    if (!term.trim()) return;
+    
     setIsLoading(true);
+    setError('');
+    
     try {
-      let postsData;
-      if (keyword) {
-        postsData = await firestoreUtils.searchPostsByKeyword(keyword);
-      } else {
-        postsData = await firestoreUtils.getAllDocuments('posts');
-      }
-      
-      const sortedPosts = postsData.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      setPosts(sortedPosts as Post[]);
+      const results = await firestoreUtils.searchPostsByKeyword(term.toLowerCase());
+      setPosts(results as Post[]);
     } catch (err: any) {
       setError(err.message);
+      setPosts([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const handleSearch = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (searchTerm.trim()) {
-      setSelectedKeyword(searchTerm.trim().toLowerCase());
-      await fetchPosts(searchTerm.trim().toLowerCase());
-    }
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) return;
+    
+    router.push(`/search?keyword=${encodeURIComponent(searchTerm.trim())}`);
+    await performSearch(searchTerm);
   };
 
-  const clearSearch = async () => {
+  const clearSearch = () => {
     setSearchTerm('');
-    setSelectedKeyword(null);
-    await fetchPosts();
-  };
-
-  const handleKeywordClick = async (keyword: string) => {
-    setSearchTerm(keyword);
-    setSelectedKeyword(keyword);
-    await fetchPosts(keyword);
-  };
-
-  const handleDelete = async (postId: string, imageUrl?: string) => {
-    try {
-      if (imageUrl) {
-        const imagePath = imageUrl.split('local-5e9a4.firebasestorage.app/o/')[1].split('?')[0];
-        const decodedPath = decodeURIComponent(imagePath);
-        await storageUtils.deleteFile(decodedPath);
-      }
-      await firestoreUtils.deleteDocument('posts', postId);
-      await fetchPosts(selectedKeyword || undefined);
-    } catch (err: any) {
-      setError(err.message);
-    }
+    setPosts([]);
+    router.push('/search');
   };
 
   const formatDate = (dateString: string) => {
@@ -111,43 +92,48 @@ export default function PostList() {
   };
 
   return (
-    <Box>
-      <Box component="form" onSubmit={handleSearch} sx={{ mb: 3 }}>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Search Posts
+      </Typography>
+
+      <Box component="form" onSubmit={handleSearch} sx={{ mb: 4 }}>
         <TextField
           fullWidth
-          placeholder="Search by keyword..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search posts by keyword..."
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon />
               </InputAdornment>
             ),
-            endAdornment: selectedKeyword && (
+            endAdornment: searchTerm && (
               <InputAdornment position="end">
-                <Chip
-                  label={`Filtering: ${selectedKeyword}`}
-                  onDelete={clearSearch}
-                  color="primary"
-                  variant="outlined"
-                />
+                <IconButton onClick={clearSearch} size="small">
+                  <ClearIcon />
+                </IconButton>
               </InputAdornment>
-            )
+            ),
           }}
         />
       </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
       {isLoading ? (
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress />
         </Box>
-      ) : posts.length === 0 ? (
+      ) : posts.length === 0 && searchTerm ? (
         <Paper elevation={2} sx={{ p: 3, textAlign: 'center' }}>
           <Typography color="text.secondary">
-            {selectedKeyword 
-              ? `No posts found with keyword "${selectedKeyword}"`
-              : 'No posts yet'}
+            No posts found with keyword "{searchTerm}"
           </Typography>
         </Paper>
       ) : (
@@ -157,19 +143,12 @@ export default function PostList() {
               <Typography variant="subtitle2" color="text.secondary">
                 {post.authorName} • {formatDate(post.createdAt)}
               </Typography>
-              {auth.currentUser?.uid === post.authorId && (
-                <IconButton 
-                  size="small" 
-                  onClick={() => handleDelete(post.id, post.imageUrl)}
-                  color="error"
-                >
-                  <DeleteIcon />
-                </IconButton>
-              )}
             </Box>
+            
             <Typography variant="body1" sx={{ mb: 2 }}>
               {post.content}
             </Typography>
+
             {post.imageUrl && (
               <Box sx={{ mb: 2 }}>
                 <CardMedia
@@ -185,6 +164,7 @@ export default function PostList() {
                 />
               </Box>
             )}
+
             {post.keywords && post.keywords.length > 0 && (
               <Box sx={{ mb: 2 }}>
                 <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
@@ -194,15 +174,17 @@ export default function PostList() {
                       label={keyword}
                       size="small"
                       icon={<LocalOfferIcon />}
-                      variant={selectedKeyword === keyword ? "filled" : "outlined"}
-                      onClick={() => handleKeywordClick(keyword)}
-                      color={selectedKeyword === keyword ? "primary" : "default"}
+                      onClick={() => {
+                        setSearchTerm(keyword);
+                        router.push(`/search?keyword=${encodeURIComponent(keyword)}`);
+                      }}
+                      color={searchTerm === keyword ? "primary" : "default"}
                     />
                   ))}
                 </Stack>
               </Box>
             )}
-            <Divider />
+
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
               <IconButton size="small">
                 <FavoriteBorderIcon />
@@ -214,6 +196,6 @@ export default function PostList() {
           </Paper>
         ))
       )}
-    </Box>
+    </Container>
   );
 }
