@@ -11,10 +11,13 @@ import {
   IconButton,
   Divider,
   CardMedia,
+  Chip,
+  Stack,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 interface Post {
   id: string;
@@ -24,6 +27,7 @@ interface Post {
   createdAt: string;
   likes: number;
   imageUrl?: string;
+  keywords?: string[];
 }
 
 export default function PostList() {
@@ -105,6 +109,21 @@ export default function PostList() {
                   objectFit: 'contain'
                 }}
               />
+            </Box>
+          )}
+          {post.keywords && post.keywords.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+                {post.keywords.map((keyword, index) => (
+                  <Chip
+                    key={index}
+                    label={keyword}
+                    size="small"
+                    icon={<LocalOfferIcon />}
+                    variant="outlined"
+                  />
+                ))}
+              </Stack>
             </Box>
           )}
           <Divider />

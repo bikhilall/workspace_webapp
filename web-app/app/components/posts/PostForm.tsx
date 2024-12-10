@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, KeyboardEvent } from 'react';
 import { firestoreUtils } from '@/app/firebase/utils/firestore';
 import { storageUtils } from '@/app/firebase/utils/storage';
 import { auth } from '@/app/firebase/config';
@@ -13,12 +13,18 @@ import {
   IconButton,
   CardMedia,
   CircularProgress,
+  Chip,
+  Stack,
+  InputAdornment,
 } from '@mui/material';
 import ImageIcon from '@mui/icons-material/Image';
 import ClearIcon from '@mui/icons-material/Clear';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_KEYWORDS = 5;
+const MAX_KEYWORD_LENGTH = 20;
 
 export default function PostForm({ onPostCreated }: { onPostCreated?: () => void }) {
   const [content, setContent] = useState('');
@@ -26,6 +32,8 @@ export default function PostForm({ onPostCreated }: { onPostCreated?: () => void
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [currentKeyword, setCurrentKeyword] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +64,34 @@ export default function PostForm({ onPostCreated }: { onPostCreated?: () => void
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleKeywordKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && currentKeyword.trim()) {
+      e.preventDefault();
+      addKeyword();
+    }
+  };
+
+  const addKeyword = () => {
+    const trimmedKeyword = currentKeyword.trim().toLowerCase();
+    if (trimmedKeyword && !keywords.includes(trimmedKeyword)) {
+      if (keywords.length >= MAX_KEYWORDS) {
+        setError(`Maximum ${MAX_KEYWORDS} keywords allowed`);
+        return;
+      }
+      if (trimmedKeyword.length > MAX_KEYWORD_LENGTH) {
+        setError(`Keywords must be ${MAX_KEYWORD_LENGTH} characters or less`);
+        return;
+      }
+      setKeywords([...keywords, trimmedKeyword]);
+      setCurrentKeyword('');
+      setError('');
+    }
+  };
+
+  const removeKeyword = (keywordToRemove: string) => {
+    setKeywords(keywords.filter(keyword => keyword !== keywordToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,6 +132,7 @@ export default function PostForm({ onPostCreated }: { onPostCreated?: () => void
         authorName: auth.currentUser.displayName || 'Anonymous',
         createdAt: new Date().toISOString(),
         likes: 0,
+        keywords: keywords,
         ...(imageUrl && { imageUrl }),
       };
 
@@ -103,6 +140,8 @@ export default function PostForm({ onPostCreated }: { onPostCreated?: () => void
       
       setContent('');
       clearImage();
+      setKeywords([]);
+      setCurrentKeyword('');
       if (onPostCreated) {
         onPostCreated();
       }
@@ -134,6 +173,38 @@ export default function PostForm({ onPostCreated }: { onPostCreated?: () => void
           disabled={isSubmitting}
           sx={{ mb: 2 }}
         />
+
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Add keywords (press Enter)"
+          value={currentKeyword}
+          onChange={(e) => setCurrentKeyword(e.target.value)}
+          onKeyDown={handleKeywordKeyDown}
+          disabled={isSubmitting || keywords.length >= MAX_KEYWORDS}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LocalOfferIcon />
+              </InputAdornment>
+            ),
+          }}
+          helperText={`${keywords.length}/${MAX_KEYWORDS} keywords used`}
+          sx={{ mb: 2 }}
+        />
+
+        {keywords.length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" gap={1}>
+            {keywords.map((keyword, index) => (
+              <Chip
+                key={index}
+                label={keyword}
+                onDelete={() => removeKeyword(keyword)}
+                disabled={isSubmitting}
+              />
+            ))}
+          </Stack>
+        )}
 
         {imagePreview && (
           <Box sx={{ position: 'relative', mb: 2 }}>
