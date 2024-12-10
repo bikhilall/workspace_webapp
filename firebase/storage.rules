@@ -13,6 +13,13 @@ service firebase.storage {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // Post images rules
+    match /posts/{userId}/{allPaths=**} {
+      allow read: if true; // Anyone can read post images
+      allow write: if request.auth != null && request.auth.uid == userId; // Only post author can upload
+      allow delete: if request.auth != null && request.auth.uid == userId; // Only post author can delete
+    }
+    
     // Public files rules
     match /public/{allPaths=**} {
       allow read: if true;

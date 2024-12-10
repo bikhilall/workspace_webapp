@@ -1,9 +1,10 @@
-import { FirebaseProvider } from './providers/firebase-provider'
 import './globals.css'
+import { AuthProvider } from './providers/auth-provider'
+import TopBar from './components/layout/TopBar'
 
 export const metadata = {
-  title: 'Create Web App',
-  description: 'AI Generated web app',
+  title: 'My App',
+  description: 'A Next.js app with Firebase integration',
 }
 
 export default function RootLayout({
@@ -14,9 +15,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <FirebaseProvider>
+        <AuthProvider>
+          <TopBar />
           {children}
-        </FirebaseProvider>
+        </AuthProvider>
       </body>
     </html>
   )

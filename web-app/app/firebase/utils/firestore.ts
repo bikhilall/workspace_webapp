@@ -8,7 +8,8 @@ import {
   deleteDoc,
   query,
   where,
-  DocumentData
+  orderBy,
+  DocumentData,
 } from 'firebase/firestore';
 import { db } from '../config';
 
@@ -25,6 +26,15 @@ export const firestoreUtils = {
     const docRef = doc(db, collectionName, docId);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? docSnap.data() : null;
+  },
+
+  // Get all documents from a collection
+  getAllDocuments: async (collectionName: string) => {
+    const querySnapshot = await getDocs(collection(db, collectionName));
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
   },
 
   // Update a document
@@ -50,6 +60,23 @@ export const firestoreUtils = {
     const q = query(
       collection(db, collectionName),
       where(fieldPath, operator, value)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  },
+
+  // Query collection with ordering
+  queryCollectionOrdered: async (
+    collectionName: string,
+    orderByField: string,
+    orderDirection: 'asc' | 'desc' = 'desc'
+  ) => {
+    const q = query(
+      collection(db, collectionName),
+      orderBy(orderByField, orderDirection)
     );
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
