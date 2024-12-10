@@ -13,6 +13,13 @@ service firebase.storage {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // Profile photos rules
+    match /profile-photos/{userId}/{allPaths=**} {
+      allow read: if true; // Anyone can view profile photos
+      allow write: if request.auth != null && request.auth.uid == userId; // Only profile owner can upload/update
+      allow delete: if request.auth != null && request.auth.uid == userId; // Only profile owner can delete
+    }
+    
     // Post images rules
     match /posts/{userId}/{allPaths=**} {
       allow read: if true; // Anyone can read post images

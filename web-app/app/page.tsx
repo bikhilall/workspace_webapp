@@ -1,10 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Container, Grid, Typography, Box, Paper, Card, CardContent, Chip, Stack, CircularProgress } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { 
+  Container, 
+  Grid, 
+  Typography, 
+  Box, 
+  Paper, 
+  Card, 
+  CardContent, 
+  Chip, 
+  Stack, 
+  CircularProgress,
+  TextField,
+  InputAdornment,
+  IconButton
+} from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
+import SearchIcon from '@mui/icons-material/Search';
 import PostForm from './components/posts/PostForm';
 import PostList from './components/posts/PostList';
 import { firestoreUtils } from './firebase/utils/firestore';
@@ -31,6 +47,8 @@ export default function Page() {
   const [popularKeywords, setPopularKeywords] = useState<string[]>([]);
   const [stats, setStats] = useState<Stats>({ totalPosts: 0, totalUsers: 0, totalInteractions: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,6 +88,13 @@ export default function Page() {
     fetchData();
   }, []);
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      router.push(`/search?keyword=${encodeURIComponent(searchTerm.trim())}`);
+    }
+  };
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -80,6 +105,47 @@ export default function Page() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Search Bar */}
+      <Paper 
+        component="form" 
+        onSubmit={handleSearch}
+        elevation={2} 
+        sx={{ 
+          p: 2, 
+          mb: 4, 
+          display: 'flex',
+          alignItems: 'center'
+        }}
+      >
+        <TextField
+          fullWidth
+          placeholder="Search posts..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          variant="outlined"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': {
+                borderColor: 'transparent',
+              },
+              '&:hover fieldset': {
+                borderColor: 'transparent',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'transparent',
+              },
+            },
+          }}
+        />
+      </Paper>
+
       <Grid container spacing={3}>
         {/* Left Sidebar - Stats */}
         <Grid item xs={12} md={3}>
@@ -111,7 +177,7 @@ export default function Page() {
                   size="small"
                   color="primary"
                   variant="outlined"
-                  onClick={() => window.location.href = `/search?keyword=${encodeURIComponent(keyword)}`}
+                  onClick={() => router.push(`/search?keyword=${encodeURIComponent(keyword)}`)}
                 />
               ))}
             </Stack>
