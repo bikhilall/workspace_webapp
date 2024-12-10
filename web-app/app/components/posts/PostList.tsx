@@ -16,6 +16,7 @@ import {
   TextField,
   InputAdornment,
   CircularProgress,
+  Alert,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -30,6 +31,7 @@ interface Post {
   authorName: string;
   createdAt: string;
   likes: number;
+  likedBy: string[];
   imageUrl?: string;
   keywords?: string[];
 }
@@ -100,6 +102,43 @@ export default function PostList() {
     }
   };
 
+  const handleLike = async (post: Post) => {
+    if (!auth.currentUser) {
+      setError('You must be logged in to like posts');
+      return;
+    }
+
+    const userId = auth.currentUser.uid;
+    const isLiked = post.likedBy?.includes(userId);
+    const updatedLikedBy = isLiked
+      ? post.likedBy.filter(id => id !== userId)
+      : [...(post.likedBy || []), userId];
+
+    // Optimistically update UI
+    setPosts(prevPosts =>
+      prevPosts.map(p =>
+        p.id === post.id
+          ? {
+              ...p,
+              likes: isLiked ? p.likes - 1 : p.likes + 1,
+              likedBy: updatedLikedBy
+            }
+          : p
+      )
+    );
+
+    try {
+      await firestoreUtils.updateDocument('posts', post.id, {
+        likes: isLiked ? post.likes - 1 : post.likes + 1,
+        likedBy: updatedLikedBy
+      });
+    } catch (err: any) {
+      // Revert optimistic update on error
+      setError('Failed to update like status');
+      await fetchPosts(selectedKeyword || undefined);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -112,6 +151,12 @@ export default function PostList() {
 
   return (
     <Box>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+      
       <Box component="form" onSubmit={handleSearch} sx={{ mb: 3 }}>
         <TextField
           fullWidth
@@ -204,8 +249,15 @@ export default function PostList() {
             )}
             <Divider />
             <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-              <IconButton size="small">
-                <FavoriteBorderIcon />
+              <IconButton 
+                size="small" 
+                onClick={() => handleLike(post)}
+                color="primary"
+              >
+                {post.likedBy?.includes(auth.currentUser?.uid || '') 
+                  ? <FavoriteIcon /> 
+                  : <FavoriteBorderIcon />
+                }
               </IconButton>
               <Typography variant="body2" color="text.secondary">
                 {post.likes}
