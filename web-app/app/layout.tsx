@@ -1,20 +1,13 @@
 'use client';
 
-import './globals.css';
 import { Inter } from 'next/font/google';
-import { FirebaseProvider } from './providers/firebase-provider';
 import { AuthProvider } from './providers/auth-provider';
+import { FirebaseProvider } from './providers/firebase-provider';
 import NavigationBar from './components/navigation/NavigationBar';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import Footer from './components/navigation/Footer';
+import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
-
-const theme = createTheme({
-  palette: {
-    mode: 'light', // or 'dark'
-  },
-});
 
 export default function RootLayout({
   children,
@@ -24,15 +17,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <FirebaseProvider>
-            <AuthProvider>
+        <FirebaseProvider>
+          <AuthProvider>
+            <div className="min-h-screen flex flex-col">
               <NavigationBar />
-              <main>{children}</main>
-            </AuthProvider>
-          </FirebaseProvider>
-        </ThemeProvider>
+              <main className="flex-grow">
+                {children}
+              </main>
+              <Footer />
+            </div>
+          </AuthProvider>
+        </FirebaseProvider>
       </body>
     </html>
   );
